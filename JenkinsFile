@@ -28,11 +28,12 @@ pipeline {
             }
         }
 
-        stage('Publish to IIS') {
+        stage('Dockerize') {
             steps {
                 script {
-                    sh 'dotnet publish --no-restore --configuration Release --output "C:\\inetpub\\wwwroot\\DevOps"'
-                    echo 'Publishing the application to IIS...'
+                    sh 'docker build -t devops .'
+                    sh 'docker run -d -p 5000:5000 devops'
+                    echo 'Dockerizing the application...'
                 }
             }
         }
