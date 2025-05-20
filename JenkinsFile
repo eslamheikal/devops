@@ -9,25 +9,29 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+
+                echo 'Checking out the code...'
             }
         }
 
         stage('Build') {
             steps {
                 script {
-                    bat 'dotnet restore'
+                    sh 'dotnet restore'
 
-                    bat 'dotnet build --configuration Release -p:Version=1.0.0'
+                    sh 'dotnet build --configuration Release -p:Version=1.0.0'
+                
+                    echo 'Building the application...'
                 }
-
-                echo 'Building the application...'
             }
         }
 
         stage('Test') {
             steps {
                 script {
-                    bat 'dotnet test --no-restore --configuration Release'
+                    sh 'dotnet test --no-restore --configuration Release'
+
+                    echo 'Testing the application...'
                 }
             }
         }
@@ -35,7 +39,9 @@ pipeline {
         stage('Publish  ') {
             steps {
                 script {
-                    bat 'dotnet publish --no-restore --configuration Release --output .\\publish'
+                    sh 'dotnet publish --no-restore --configuration Release --output .\\publish'
+
+                    echo 'Publishing the application...'
                 }
             }
         }
