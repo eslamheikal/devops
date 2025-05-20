@@ -12,8 +12,8 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    sh 'dotnet restore'
-                    sh 'dotnet build --configuration Release -p:Version=1.0.0'
+                    bat 'dotnet restore'
+                    bat 'dotnet build --configuration Release -p:Version=1.0.0'
                     echo 'Building the application...'
                 }
             }
@@ -22,17 +22,17 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    sh 'dotnet test --no-restore --configuration Release'
+                    bat 'dotnet test --no-restore --configuration Release'
                     echo 'Testing the application...'
                 }
             }
         }
 
-        stage('Publish') {
+        stage('Publish to IIS') {
             steps {
                 script {
-                    sh 'dotnet publish --no-restore --configuration Release --output ./publish'
-                    echo 'Publishing the application...'
+                    bat 'dotnet publish --no-restore --configuration Release --output "C:\\inetpub\\wwwroot\\DevOps"'
+                    echo 'Publishing the application to IIS...'
                 }
             }
         }
