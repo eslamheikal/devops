@@ -1,48 +1,31 @@
 pipeline {
     agent any
-
-    environment {
-        DOTNET_CLI_HOME = 'C:\\Program Files\\dotnet'
-    }
-
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-
-                echo 'Checking out the code...'
-            }
-        }
-
         stage('Build') {
             steps {
-                script {
-                    sh 'dotnet restore'
-
-                    sh 'dotnet build --configuration Release -p:Version=1.0.0'
+                // Explicitly restore packages for each project
+                sh 'dotnet restore DevOps.sln'
                 
-                    echo 'Building the application...'
-                }
+                // Build with clearer output
+                sh 'dotnet build DevOps.sln --configuration Release -p:Version=1.0.0 --no-restore'
             }
         }
-
         stage('Test') {
             steps {
-                script {
-                    sh 'dotnet test --no-restore --configuration Release'
-
-                    echo 'Testing the application...'
-                }
+                // Test specific test projects if needed
+                sh 'dotnet test DevOps.sln --configuration Release --no-build --verbosity normal'
             }
         }
-
-        stage('Publish  ') {
+        stage('Publish') {
             steps {
-                script {
-                    sh 'dotnet publish --no-restore --configuration Release --output .\\publish'
-
-                    echo 'Publishing the application...'
-                }
+                // Publish individual projects instead of solution
+                sh '''
+                mkdir -p .publish
+                dotnet publish DevOps.sln \
+                    --configuration Release \
+                    --no-build \
+                    -p:Version=1.0.0
+                '''
             }
         }
     }
