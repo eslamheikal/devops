@@ -37,12 +37,15 @@ pipeline {
                 script {
                     def branchName = env.BRANCH_NAME.replace('origin/', '')
                     
+                    echo "Branch Name is ${branchName}"
+
                     def portMapping = '5051:5000'
                     if (branchName == 'main') {
                         portMapping = '5000:5000'
                     } else if (branchName == 'staging') {
                         portMapping = '5050:5000'
                     }
+                    
                     // Build and run commands
                     sh """
                         docker build -t ${DOCKER_IMAGE}:${branchName} .
