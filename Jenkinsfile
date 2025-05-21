@@ -35,16 +35,25 @@ pipeline {
         stage('Dockerize') {
             steps {
                 script {
-                    def port = '5051'
-                    if (env.BRANCH_NAME == 'main') {
-                        port = '5000'
-                    } else if (env.BRANCH_NAME == 'staging') {
-                        port = '5050'
+                    def branchName = env.BRANCH_NAME.replace('origin/', '')
+                    
+                    def portMapping = '5051:80'
+                    if (branchName == 'main') {
+                        portMapping = '5000:80'
+                    } else if (branchName == 'staging') {
+                        portMapping = '5050:80'
                     }
-
-                    sh 'docker build -t ${DOCKER_IMAGE} .'
-                    sh 'docker run -d -p ${port}:${port} ${DOCKER_IMAGE} --name ${DOCKER_IMAGE}-${env.BRANCH_NAME} ${DOCKER_IMAGE}:${env.BRANCH_NAME}'
-                    echo 'Dockerizing the application...'
+                    // Build and run commands
+                    sh """
+                        docker build -t ${DOCKER_IMAGE}:${branchName} .
+                        docker stop ${DOCKER_IMAGE}-${branchName} || true
+                        docker rm ${DOCKER_IMAGE}-${branchName} || true
+                        docker run -d \\
+                            -p ${portMapping} \\
+                            --name ${DOCKER_IMAGE}-${branchName} \\
+                            ${DOCKER_IMAGE}:${branchName}
+                    """
+                    echo "Dockerized application running on port ${portMapping.split(':')[0]}"
                 }
             }
         }
@@ -56,4 +65,3 @@ pipeline {
         }
     }
 }
-
