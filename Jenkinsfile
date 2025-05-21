@@ -37,11 +37,11 @@ pipeline {
                 script {
                     def branchName = env.BRANCH_NAME.replace('origin/', '')
                     
-                    def portMapping = '5051:80'
+                    def portMapping = '5051:5000'
                     if (branchName == 'main') {
-                        portMapping = '5000:80'
+                        portMapping = '5000:5000'
                     } else if (branchName == 'staging') {
-                        portMapping = '5050:80'
+                        portMapping = '5050:5000'
                     }
                     // Build and run commands
                     sh """
