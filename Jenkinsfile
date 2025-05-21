@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = 'devops'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -31,9 +35,28 @@ pipeline {
         stage('Dockerize') {
             steps {
                 script {
-                    sh 'docker build -t devops .'
-                    sh 'docker run -d -p 5000:5000 devops'
-                    echo 'Dockerizing the application...'
+                    def branchName = env.BRANCH_NAME.replace('origin/', '')
+                    
+                    echo "Branch Name is ${branchName}"
+
+                    def portMapping = '5051:5000'
+                    if (branchName == 'main') {
+                        portMapping = '5000:5000'
+                    } else if (branchName == 'staging') {
+                        portMapping = '5050:5000'
+                    }
+                    
+                    // Build and run commands
+                    sh """
+                        docker build -t ${DOCKER_IMAGE}:${branchName} .
+                        docker stop ${DOCKER_IMAGE}-${branchName} || true
+                        docker rm ${DOCKER_IMAGE}-${branchName} || true
+                        docker run -d \\
+                            -p ${portMapping} \\
+                            --name ${DOCKER_IMAGE}-${branchName} \\
+                            ${DOCKER_IMAGE}:${branchName}
+                    """
+                    echo "Dockerized application running on port ${portMapping.split(':')[0]}"
                 }
             }
         }
@@ -45,4 +68,3 @@ pipeline {
         }
     }
 }
-
