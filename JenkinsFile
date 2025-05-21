@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = 'devops'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -31,8 +35,15 @@ pipeline {
         stage('Dockerize') {
             steps {
                 script {
-                    sh 'docker build -t devops .'
-                    sh 'docker run -d -p 5000:5000 devops'
+                    def port = '5051'
+                    if (env.BRANCH_NAME == 'main') {
+                        port = '5000'
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        port = '5050'
+                    }
+
+                    sh 'docker build -t ${DOCKER_IMAGE} .'
+                    sh 'docker run -d -p ${port}:${port} ${DOCKER_IMAGE} --name ${DOCKER_IMAGE}-${env.BRANCH_NAME} ${DOCKER_IMAGE}:${env.BRANCH_NAME}'
                     echo 'Dockerizing the application...'
                 }
             }
