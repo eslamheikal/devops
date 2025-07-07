@@ -2,37 +2,52 @@ def getBranchName() {
     return env.BRANCH_NAME.replace('origin/', '')
 }
 
+def getPort(branchName) {
+    def portMapping = '5051:5000' // Default for feature branches
+
+    if (branchName == 'main') {
+        portMapping = '5000:5000'
+    } else if (branchName == 'staging') {
+        portMapping = '5050:5000'
+    }
+
+    return portMapping             
+}
+
 pipeline {
     agent any
+    
+    // Add this to explicitly specify Git installation
+    tools {
+        git 'Default' // Or the name you configured in Jenkins Global Tools
+    }
 
     environment {
         DOCKER_IMAGE = 'devops'
     }
 
     parameters {
-        choice(name: 'DEPLOY_ENV', choices: ['dev', 'stage', 'prod'], description: 'Select environment')
+        string(name: 'DEPLOY_ENV', defaultValue: 'develop', description: 'Deployment environment')
     }
 
     stages {
-        stage('Load Config') {
+        stage('Parameters Test') {
             steps {
+                echo "Deploying to environment: ${params.DEPLOY_ENV}"
                 script {
-                    def config = readProperties file: "jenkins/config/${params.DEPLOY_ENV}.properties"
-                    
-                    // Store in env variables for global access
-                    env.PORT_MAPPING = config.PORT_MAPPING
-                    
-                    echo "Using ENV: ${config.ENV_NAME}"
+                    if (params.DEPLOY_ENV == 'staging') {
+                        echo "Performing staging deployment test"
+                    }
                 }
             }
         }
 
         stage('Run in Stage Only') {
             when {
-                branch 'develop'
+                branch 'staging'
             }
             steps {
-                echo "Running in develop only..."
+                echo "Running in stage only..."
             }
         }
 
@@ -66,20 +81,16 @@ pipeline {
             steps {
                 script {
                     def branchName = getBranchName()
+                    def portMapping = getPort(branchName)
                     
-                    echo "Branch Name is ${branchName}"
-
-                    def portMapping = env.PORT_MAPPING
-                    
-                    // Build and run commands
                     sh """
-                        docker build -t ${DOCKER_IMAGE}:${branchName} .
-                        docker stop ${DOCKER_IMAGE}-${branchName} || true
-                        docker rm ${DOCKER_IMAGE}-${branchName} || true
+                        docker build -t ${env.DOCKER_IMAGE}:${branchName} .
+                        docker stop ${env.DOCKER_IMAGE}-${branchName} || true
+                        docker rm ${env.DOCKER_IMAGE}-${branchName} || true
                         docker run -d \\
                             -p ${portMapping} \\
-                            --name ${DOCKER_IMAGE}-${branchName} \\
-                            ${DOCKER_IMAGE}:${branchName}
+                            --name ${env.DOCKER_IMAGE}-${branchName} \\
+                            ${env.DOCKER_IMAGE}:${branchName}
                     """
                     echo "Dockerized application running on port ${portMapping.split(':')[0]}"
                 }
