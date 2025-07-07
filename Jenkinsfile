@@ -1,3 +1,19 @@
+def getBranchName() {
+    return env.BRANCH_NAME.replace('origin/', '')
+}
+
+def getPort(branchName) {
+    def portMapping = '5051:5000'
+
+    if (branchName == 'main') {
+        portMapping = '5000:5000'
+    } else if (branchName == 'staging') {
+        portMapping = '5050:5000'
+    }
+
+    return portMapping;             
+}
+
 pipeline {
     agent any
 
@@ -5,7 +21,22 @@ pipeline {
         DOCKER_IMAGE = 'devops'
     }
 
+    parameters {
+        string(name: 'DEPLOY_ENV', defaultValue: 'develop', description: 'Deployment environment')
+    }
+
     stages {
+        stage('Parameters Test') {
+            steps {
+                echo "Deploying to environment: ${params.DEPLOY_ENV}"
+                script {
+                    if (params.DEPLOY_ENV == 'staging') {
+                        echo "Performing staging deployment test"
+                    }
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -35,16 +66,11 @@ pipeline {
         stage('Dockerize') {
             steps {
                 script {
-                    def branchName = env.BRANCH_NAME.replace('origin/', '')
+                    def branchName = getBranchName()
                     
                     echo "Branch Name is ${branchName}"
 
-                    def portMapping = '5051:5000'
-                    if (branchName == 'main') {
-                        portMapping = '5000:5000'
-                    } else if (branchName == 'staging') {
-                        portMapping = '5050:5000'
-                    }
+                    def portMapping = getPort(branchName)
                     
                     // Build and run commands
                     sh """
