@@ -34,13 +34,6 @@ pipeline {
             steps {
                 echo "Running in develop only..."
             }
-
-            when {
-                branch 'staging'
-            }
-            steps {
-                echo "Running in staging only..."
-            }
         }
 
         stage('Checkout') {
