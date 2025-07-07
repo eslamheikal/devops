@@ -29,14 +29,25 @@ pipeline {
         stage('Load Config') {
             steps {
                 script {
-                    echo "Read properties from: ${params.DEPLOY_ENV}"
+                    echo "Reading properties from: ${params.DEPLOY_ENV}"
 
-                    def config = "jenkins/config/${params.DEPLOY_ENV}.properties"
-                    def props = readProperties file: config
+                    def configFile = "jenkins/config/${params.DEPLOY_ENV}.properties"
 
-                    env.PORT_MAPPING = props.PORT_MAPPING
-                    
-                    echo "PORT of ${params.DEPLOY_ENV} : ${props.PORT_MAPPING}"
+                    // Check if file exists first
+                    if (fileExists(configFile)) {
+                        echo "Found config file: ${configFile}"
+                        def props = readProperties file: configFile
+
+                        // Example usage
+                        if (props.PORT_MAPPING) {
+                            echo "PORT of ${params.DEPLOY_ENV} : ${props.PORT_MAPPING}"
+                            env.PORT_MAPPING = props.PORT_MAPPING
+                        } else {
+                            echo "PORT_MAPPING not defined in ${configFile}"
+                        }
+                    } else {
+                        error "Config file not found: ${configFile}"
+                    }
                 }
             }
         }
