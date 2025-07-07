@@ -16,11 +16,6 @@ def getPort(branchName) {
 
 pipeline {
     agent any
-    
-    // Add this to explicitly specify Git installation
-    tools {
-        git 'Default' // Or the name you configured in Jenkins Global Tools
-    }
 
     environment {
         DOCKER_IMAGE = 'devops'
@@ -35,6 +30,14 @@ pipeline {
             steps {
                 script {
                     echo "Read properties from: ${params.DEPLOY_ENV}"
+
+                    def workspace = pwd()
+                    def configPath = "${workspace}/jenkins/config/${params.DEPLOY_ENV}.properties"
+                    
+                    // Verify file exists
+                    if (!fileExists(configPath)) {
+                        error "Config file not found at: ${configPath}"
+                    }
 
                     def config = readProperties file: "jenkins/config/${params.DEPLOY_ENV}.properties"
                     env.PORT_MAPPING = config.PORT_MAPPING
