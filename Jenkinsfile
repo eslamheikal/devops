@@ -14,6 +14,17 @@ def getPort(branchName) {
     return portMapping;             
 }
 
+def devStages = [
+    stage('Run in Stage Only') {
+        when {
+            branch 'develop'
+        }
+        steps {
+            echo "Running in develop only from dev stages list..."
+        }
+    }
+]
+
 pipeline {
     agent any
 
@@ -37,14 +48,7 @@ pipeline {
             }
         }
 
-        stage('Run in Stage Only') {
-            when {
-                branch 'staging'
-            }
-            steps {
-                echo "Running in stage only..."
-            }
-        }
+        devStages.each { s -> s.call() }
 
         stage('Checkout') {
             steps {
