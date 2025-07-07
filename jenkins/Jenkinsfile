@@ -1,17 +1,6 @@
+def PORT_MAPPING = '';
 def getBranchName() {
     return env.BRANCH_NAME.replace('origin/', '')
-}
-
-def getPort(branchName) {
-    def portMapping = '5051:5000' // Default for feature branches
-
-    if (branchName == 'main') {
-        portMapping = '5000:5000'
-    } else if (branchName == 'staging') {
-        portMapping = '5050:5000'
-    }
-
-    return portMapping             
 }
 
 pipeline {
@@ -26,27 +15,19 @@ pipeline {
     }
 
     stages {
-        stage('Load Config') {
+        stage('Load Port Mapping') {
             steps {
                 script {
                     echo "Reading properties from: ${params.DEPLOY_ENV}"
 
                     def configFile = "jenkins/config/${params.DEPLOY_ENV}.properties"
+                    def props = readProperties file: configFile
 
-                    // Check if file exists first
-                    if (fileExists(configFile)) {
-                        echo "Found config file: ${configFile}"
-                        def props = readProperties file: configFile
-
-                        // Example usage
-                        if (props.PORT_MAPPING) {
-                            echo "PORT of ${params.DEPLOY_ENV} : ${props.PORT_MAPPING}"
-                            env.PORT_MAPPING = props.PORT_MAPPING
-                        } else {
-                            echo "PORT_MAPPING not defined in ${configFile}"
-                        }
+                    if (props.PORT_MAPPING) {
+                        echo "PORT of ${params.DEPLOY_ENV} : ${props.PORT_MAPPING}"
+                        PORT_MAPPING = props.PORT_MAPPING
                     } else {
-                        error "Config file not found: ${configFile}"
+                        echo "PORT_MAPPING not defined in ${configFile}"
                     }
                 }
             }
@@ -91,14 +72,13 @@ pipeline {
             steps {
                 script {
                     def branchName = getBranchName()
-                    def portMapping = getPort(branchName)
                     
                     sh """
                         docker build -t ${env.DOCKER_IMAGE}:${branchName} .
                         docker stop ${env.DOCKER_IMAGE}-${branchName} || true
                         docker rm ${env.DOCKER_IMAGE}-${branchName} || true
                         docker run -d \\
-                            -p ${portMapping} \\
+                            -p ${PORT_MAPPING} \\
                             --name ${env.DOCKER_IMAGE}-${branchName} \\
                             ${env.DOCKER_IMAGE}:${branchName}
                     """
