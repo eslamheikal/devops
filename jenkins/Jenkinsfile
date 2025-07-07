@@ -72,15 +72,18 @@ pipeline {
             steps {
                 script {
                     def branchName = getBranchName()
-                    
+                    def imageTag = "${env.DOCKER_IMAGE}:${branchName}"
+
+                    def appImage = docker.build(imageTag)
+
+                    // Stop & remove existing container safely
                     sh """
-                        docker build -t ${env.DOCKER_IMAGE}:${branchName} .
                         docker stop ${env.DOCKER_IMAGE}-${branchName} || true
                         docker rm ${env.DOCKER_IMAGE}-${branchName} || true
-                        docker run -d \\
-                            -p ${PORT_MAPPING} \\
-                            --name ${env.DOCKER_IMAGE}-${branchName} \\
-                            ${env.DOCKER_IMAGE}:${branchName}
+                    """
+
+                    sh """
+                        docker run -d -p ${PORT_MAPPING} --name ${env.DOCKER_IMAGE}-${branchName} ${imageTag}
                     """
                     echo "Dockerized application running on port ${PORT_MAPPING.split(':')[0]}"
                 }
