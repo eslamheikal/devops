@@ -37,6 +37,15 @@ pipeline {
             }
         }
 
+        stage('Run in Stage Only') {
+            when {
+                branch 'staging'
+            }
+            steps {
+                echo "Running in stage only..."
+            }
+        }
+
         stage('Checkout') {
             steps {
                 checkout scm
