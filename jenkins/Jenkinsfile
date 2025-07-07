@@ -82,7 +82,7 @@ pipeline {
                             --name ${env.DOCKER_IMAGE}-${branchName} \\
                             ${env.DOCKER_IMAGE}:${branchName}
                     """
-                    echo "Dockerized application running on port ${portMapping.split(':')[0]}"
+                    echo "Dockerized application running on port ${PORT_MAPPING.split(':')[0]}"
                 }
             }
         }
