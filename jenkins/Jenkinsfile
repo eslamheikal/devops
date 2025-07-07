@@ -2,18 +2,6 @@ def getBranchName() {
     return env.BRANCH_NAME.replace('origin/', '')
 }
 
-def getPort(branchName) {
-    def portMapping = '5051:5000'
-
-    if (branchName == 'main') {
-        portMapping = '5000:5000'
-    } else if (branchName == 'staging') {
-        portMapping = '5050:5000'
-    }
-
-    return portMapping;             
-}
-
 pipeline {
     agent any
 
@@ -22,17 +10,19 @@ pipeline {
     }
 
     parameters {
-        string(name: 'DEPLOY_ENV', defaultValue: 'develop', description: 'Deployment environment')
+        choice(name: 'DEPLOY_ENV', choices: ['dev', 'stage', 'prod'], description: 'Select environment')
     }
 
     stages {
-        stage('Parameters Test') {
+        stage('Load Config') {
             steps {
-                echo "Deploying to environment: ${params.DEPLOY_ENV}"
                 script {
-                    if (params.DEPLOY_ENV == 'staging') {
-                        echo "Performing staging deployment test"
-                    }
+                    def config = readProperties file: "jenkins/config/${params.DEPLOY_ENV}.properties"
+                    
+                    // Store in env variables for global access
+                    env.PORT_MAPPING = config.PORT_MAPPING
+                    
+                    echo "Using ENV: ${config.ENV_NAME}"
                 }
             }
         }
@@ -86,7 +76,7 @@ pipeline {
                     
                     echo "Branch Name is ${branchName}"
 
-                    def portMapping = getPort(branchName)
+                    def portMapping = env.PORT_MAPPING
                     
                     // Build and run commands
                     sh """
