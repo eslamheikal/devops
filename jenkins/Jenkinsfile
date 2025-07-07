@@ -32,9 +32,9 @@ pipeline {
                     echo "Read properties from: ${params.DEPLOY_ENV}"
 
                     def config = "jenkins/config/${params.DEPLOY_ENV}.properties"
-                    def props = readProperties file: envFile
+                    def props = readProperties file: config
 
-                    // env.PORT_MAPPING = config.PORT_MAPPING
+                    env.PORT_MAPPING = props.PORT_MAPPING
                     
                     echo "PORT of ${params.DEPLOY_ENV} : ${props.PORT_MAPPING}"
                 }
