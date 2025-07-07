@@ -31,18 +31,12 @@ pipeline {
                 script {
                     echo "Read properties from: ${params.DEPLOY_ENV}"
 
-                    def workspace = pwd()
-                    def configPath = "${workspace}/jenkins/config/${params.DEPLOY_ENV}.properties"
-                    
-                    // Verify file exists
-                    if (!fileExists(configPath)) {
-                        error "Config file not found at: ${configPath}"
-                    }
+                    def config = "jenkins/config/${params.DEPLOY_ENV}.properties"
+                    def props = readProperties file: envFile
 
-                    def config = readProperties file: "jenkins/config/${params.DEPLOY_ENV}.properties"
-                    env.PORT_MAPPING = config.PORT_MAPPING
+                    // env.PORT_MAPPING = config.PORT_MAPPING
                     
-                    echo "PORT of ${params.DEPLOY_ENV} : ${env.PORT_MAPPING}"
+                    echo "PORT of ${params.DEPLOY_ENV} : ${props.PORT_MAPPING}"
                 }
             }
         }
